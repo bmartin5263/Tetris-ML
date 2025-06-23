@@ -1,6 +1,5 @@
 import random
 from dataclasses import dataclass
-from typing import NamedTuple, Optional
 from enum import Enum, unique, auto
 
 @dataclass(frozen=True)
@@ -58,6 +57,12 @@ class Piece:
         self.ccwRotation = ccwRotation
         self.cwRotation = cwRotation
 
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return f"{self.block} {self.body}"
+
 
 class Pieces:
     O_0 = Piece(Block.O, [Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)])
@@ -105,4 +110,4 @@ class Pieces:
 
     @staticmethod
     def random() -> Piece:
-        return random.choice(Pieces.ALL)
+        return random.choice(Pieces.STARTERS)

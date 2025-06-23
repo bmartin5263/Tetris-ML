@@ -1,9 +1,10 @@
-import config
-from piece import *
-from typing import Final
+from dataclasses import dataclass
+
+from game.piece import *
+
 
 @unique
-class Move(Enum):
+class Action(Enum):
     MOVE_LEFT = auto()
     MOVE_RIGHT = auto()
     MOVE_DOWN = auto()
@@ -21,6 +22,14 @@ OK = Result()
 NEXT_PIECE = Result()
 GAME_OVER = Result()
 
+@dataclass(frozen=True)
+class State:
+    board: list[list[Block]]
+    currentPiece: Piece
+    nextPiece: Piece
+    position: Point
+    score: int
+
 class Tetris:
     LEFT = Point(-1, 0)
     RIGHT = Point(1, 0)
@@ -29,67 +38,112 @@ class Tetris:
 
     POINT_VALUES = [100, 300, 1200, 3600]
 
-    def __init__(self):
-        self.board: list[list[Block]] = [[Block.Empty for _ in range(config.COLS)] for _ in range(config.ROWS)]
+    def __init__(self, rows: int, cols: int):
+        self.ROWS = rows
+        self.COLS = cols
+        self.STARTING_POINT = Point((self.COLS // 2) - 1, 1)
+
+
+        self.board: list[list[Block]] = [[Block.Empty for _ in range(self.COLS)] for _ in range(self.ROWS)]
         self.currentPiece: Piece = Pieces.random()
         self.nextPiece: Piece = Pieces.random()
-        self.position: Point = Point((config.COLS // 2) - 1, 1)
+        self.position: Point = self.STARTING_POINT
         self.score: int = 0
         self.rowsCleared: int = 0
         self.combos: list[int] = [0 for _ in range(4)]
+        self.gameOver: bool = False
+        self._placePiece(self.currentPiece, self.position)
 
-    def reset(self):
-        self.board: list[list[Block]] = [[Block.Empty for _ in range(config.COLS)] for _ in range(config.ROWS)]
+    def newGame(self):
+        self.board: list[list[Block]] = [[Block.Empty for _ in range(self.COLS)] for _ in range(self.ROWS)]
+        self.gameOver = False
+        self.nextPiece: Piece = Pieces.random()
         self._nextPiece()
 
-    def makeMove(self, move: Move) -> Result:
-        match move:
-            case Move.MOVE_LEFT:
+    def makeAction(self, action: Action) -> Result:
+        if self.gameOver:
+            return GAME_OVER
+        match action:
+            case Action.MOVE_LEFT:
+                print('Action: MOVE_LEFT')
                 return self._movePiece(Tetris.LEFT)
-            case Move.MOVE_RIGHT:
+            case Action.MOVE_RIGHT:
+                print('Action: MOVE_RIGHT')
                 return self._movePiece(Tetris.RIGHT)
-            case Move.MOVE_DOWN:
+            case Action.MOVE_DOWN:
+                print('Action: MOVE_DOWN')
                 return self._movePiece(Tetris.DOWN)
-            case Move.ROTATE_CW:
+            case Action.ROTATE_CW:
+                print('Action: ROTATE_CW')
                 return self._rotatePiece(self.currentPiece.cwRotation)
-            case Move.ROTATE_CCW:
+            case Action.ROTATE_CCW:
+                print('Action: ROTATE_CCW')
                 return self._rotatePiece(self.currentPiece.ccwRotation)
-            case Move.DROP:
+            case Action.DROP:
+                print('Action: DROP')
                 return self._drop()
             case _:
                 print('Received invalid move')
                 return NO_CHANGE
 
+    def getState(self):
+        return State(self.board, self.currentPiece, self.nextPiece, self.position, self.score)
+
     def _placePiece(self, piece: Piece, location: Point):
         for point in piece:
             spot = point + location
-            assert self.board[spot.row][spot.col] == Block.EMPTY
+            assert self.board[spot.row][spot.col] == Block.Empty
             self.board[spot.row][spot.col] = piece.block
 
     def _removePiece(self, piece: Piece, location: Point):
         for point in piece:
             spot = point + location
-            assert self.board[spot.row][spot.col] != Block.EMPTY
-            self.board[spot.row][spot.col] = Block.EMPTY
+            assert self.board[spot.row][spot.col] != Block.Empty
+            self.board[spot.row][spot.col] = Block.Empty
 
     def _canPlacePieceAt(self, piece: Piece, location: Point) -> bool:
         for point in piece:
             spot = point + location
-            if spot.row < 0 or spot.row > config.ROWS or spot.col < 0 or spot.col > config.COLS or self.board[spot.row][
-                spot.col] != Block.EMPTY:
+            if spot.row < 0 or spot.row >= self.ROWS or spot.col < 0 or spot.col >= self.COLS or self.board[spot.row][spot.col] != Block.Empty:
                 return False
         return True
 
+    #   if (!canPlacePiece(currentPiece, currentPosition)) {
+    #     currentPosition.y -= 1;
+    #     if (!canPlacePiece(currentPiece, currentPosition)) {
+    #       for (auto& row : board) {
+    #         for (auto& c : row) {
+    #           if (c != Color::OFF()) {
+    #             c = Color(.03f, .03f, .03f);
+    #           }
+    #         }
+    #       }
+    #       gameOver = true;
+    #     }
+    #   }
+
     def _nextPiece(self):
+        print("Next Piece")
         self.currentPiece = self.nextPiece
         self.nextPiece = Pieces.random()
-        self.position: Point = Point((config.COLS // 2) - 1, 1)
+        self.position: Point = self.STARTING_POINT
+
+        if not self._canPlacePieceAt(self.currentPiece, self.position):
+            self.position = self.position + Tetris.UP
+            if not self._canPlacePieceAt(self.currentPiece, self.position):
+                self.gameOver = True
+                for point in self.currentPiece:
+                    spot = point + self.position
+                    self.board[spot.row][spot.col] = self.currentPiece.block
+                return
+
+        self._placePiece(self.currentPiece, self.position)
 
     def _movePiece(self, offset: Point) -> Result:
         if offset.x == 0 and offset.y == 0:
             return NO_CHANGE
 
-        isDown = offset.y >= 0
+        isDown = offset.y > 0
         moved = False
 
         self._removePiece(self.currentPiece, self.position)
@@ -130,38 +184,50 @@ class Tetris:
         destination = destination + Tetris.UP
 
         self._placePiece(self.currentPiece, destination)
+        self.position = destination
+
         return self._clearRows()
 
     def _clearRows(self) -> Result:
         rowNumbersToCheck: set[int] = {(point + self.position).row for point in self.currentPiece.body}
-        count = len(rowNumbersToCheck)
-        if count == 0:
-            return NEXT_PIECE
+        print("Row numbers to check:", sorted(rowNumbersToCheck))
 
-        self.score += Tetris.POINT_VALUES[count - 1]
-        self.rowsCleared += count
-        self.combos[count - 1] += 1
-
-        for rowNum in rowNumbersToCheck:
+        numberOfClearedRows = 0
+        for rowNum in sorted(rowNumbersToCheck):
             if self._isRowFull(self.board[rowNum]):
                 self._clearRow(rowNum)
+                numberOfClearedRows += 1
+
+        if numberOfClearedRows > 0:
+            print("Cleared {} row(s). Earning {} points".format(numberOfClearedRows,
+                                                                Tetris.POINT_VALUES[numberOfClearedRows - 1]))
+            self.score += Tetris.POINT_VALUES[numberOfClearedRows - 1]
+            self.rowsCleared += numberOfClearedRows
+            self.combos[numberOfClearedRows - 1] += 1
+
+        self._nextPiece()
 
         return NEXT_PIECE
 
     def _clearRow(self, rowNumToClear: int):
         while rowNumToClear > 0:
-            self.board[rowNumToClear] = self.board[rowNumToClear - 1]
+            Tetris._copyRow(self.board[rowNumToClear], self.board[rowNumToClear - 1])
             rowNumToClear -= 1
         Tetris._fillRow(self.board[0], Block.Empty)
 
     @staticmethod
     def _isRowFull(row: list[Block]):
         for block in row:
-            if block == Block.EMPTY:
+            if block == Block.Empty:
                 return False
         return True
 
     @staticmethod
     def _fillRow(row: list[Block], block: Block):
-        for colNum in range(config.COLS):
+        for colNum in range(len(row)):
             row[colNum] = block
+
+    @staticmethod
+    def _copyRow(dst: list[Block], src: list[Block]):
+        for colNum in range(len(dst)):
+            dst[colNum] = src[colNum]
