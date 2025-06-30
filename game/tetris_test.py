@@ -1,4 +1,3 @@
-import random
 import unittest
 
 from game.tetris import *
@@ -38,7 +37,7 @@ class TetrisTest(unittest.TestCase):
         self.assertEqual(self.tetris.STARTING_POINT, self.tetris.position)
         nextPiece = self.tetris.nextPiece
 
-        self.tetris.makeAction(Action.DROP)
+        self.tetris.drop()
 
         self.assertEqual(nextPiece, self.tetris.currentPiece)
         self.assertEqual(self.tetris.STARTING_POINT, self.tetris.position)

@@ -44,9 +44,10 @@ class Block(Enum):
 
 class Piece:
 
-    def __init__(self, block: Block, body: list[Point]):
-        self.block = block
-        self.body = body
+    def __init__(self, identifier: str, block: Block, body: list[Point]):
+        self.identifier: str = identifier
+        self.block: block = block
+        self.body: list[Point] = body
         self.ccwRotation: Piece | None = None
         self.cwRotation: Piece | None = None
 
@@ -61,29 +62,29 @@ class Piece:
         return self.__str__()
 
     def __str__(self):
-        return f"{self.block} {self.body}"
+        return self.identifier
 
 
 class Pieces:
-    O_0 = Piece(Block.O, [Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)])
-    J_0 = Piece(Block.J, [Point(0, 0), Point(1, 0), Point(2, 0), Point(2, 1)])
-    J_1 = Piece(Block.J, [Point(1, -1), Point(1, 0), Point(0, 1), Point(1, 1)])
-    J_2 = Piece(Block.J, [Point(0, 0), Point(0, 1), Point(1, 1), Point(2, 1)])
-    J_3 = Piece(Block.J, [Point(0, -1), Point(1, -1), Point(0, 0), Point(0, 1)])
-    L_0 = Piece(Block.L, [Point(0, 0), Point(1, 0), Point(2, 0), Point(0, 1)])
-    L_1 = Piece(Block.L, [Point(0, -1), Point(1, -1), Point(1, 0), Point(1, 1)])
-    L_2 = Piece(Block.L, [Point(2, 0), Point(0, 1), Point(1, 1), Point(2, 1)])
-    L_3 = Piece(Block.L, [Point(0, -1), Point(0, 0), Point(0, 1), Point(1, 1)])
-    T_0 = Piece(Block.T, [Point(0, 0), Point(1, 0), Point(2, 0), Point(1, 1)])
-    T_1 = Piece(Block.T, [Point(2, -1), Point(1, 0), Point(2, 0), Point(2, 1)])
-    T_2 = Piece(Block.T, [Point(1, 0), Point(0, 1), Point(1, 1), Point(2, 1)])
-    T_3 = Piece(Block.T, [Point(0, -1), Point(1, 0), Point(0, 0), Point(0, 1)])
-    Z_0 = Piece(Block.Z, [Point(0, 0), Point(1, 0), Point(1, 1), Point(2, 1)])
-    Z_1 = Piece(Block.Z, [Point(1, -1), Point(1, 0), Point(0, 0), Point(0, 1)])
-    S_0 = Piece(Block.S, [Point(1, 0), Point(2, 0), Point(0, 1), Point(1, 1)])
-    S_1 = Piece(Block.S, [Point(0, -1), Point(0, 0), Point(1, 0), Point(1, 1)])
-    I_0 = Piece(Block.I, [Point(0, 0), Point(1, 0), Point(2, 0), Point(3, 0)])
-    I_1 = Piece(Block.I, [Point(2, -1), Point(2, 0), Point(2, 1), Point(2, 2)])
+    O_0 = Piece('O0', Block.O, [Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)])
+    J_0 = Piece('J0', Block.J, [Point(0, 0), Point(1, 0), Point(2, 0), Point(2, 1)])
+    J_1 = Piece('J1', Block.J, [Point(1, -1), Point(1, 0), Point(0, 1), Point(1, 1)])
+    J_2 = Piece('J2', Block.J, [Point(0, 0), Point(0, 1), Point(1, 1), Point(2, 1)])
+    J_3 = Piece('J3', Block.J, [Point(0, -1), Point(1, -1), Point(0, 0), Point(0, 1)])
+    L_0 = Piece('L0', Block.L, [Point(0, 0), Point(1, 0), Point(2, 0), Point(0, 1)])
+    L_1 = Piece('L1', Block.L, [Point(0, -1), Point(1, -1), Point(1, 0), Point(1, 1)])
+    L_2 = Piece('L2', Block.L, [Point(2, 0), Point(0, 1), Point(1, 1), Point(2, 1)])
+    L_3 = Piece('L3', Block.L, [Point(0, -1), Point(0, 0), Point(0, 1), Point(1, 1)])
+    T_0 = Piece('T0', Block.T, [Point(0, 0), Point(1, 0), Point(2, 0), Point(1, 1)])
+    T_1 = Piece('T1', Block.T, [Point(2, -1), Point(1, 0), Point(2, 0), Point(2, 1)])
+    T_2 = Piece('T2', Block.T, [Point(1, 0), Point(0, 1), Point(1, 1), Point(2, 1)])
+    T_3 = Piece('T3', Block.T, [Point(0, -1), Point(1, 0), Point(0, 0), Point(0, 1)])
+    Z_0 = Piece('Z0', Block.Z, [Point(0, 0), Point(1, 0), Point(1, 1), Point(2, 1)])
+    Z_1 = Piece('Z1', Block.Z, [Point(1, -1), Point(1, 0), Point(0, 0), Point(0, 1)])
+    S_0 = Piece('S0', Block.S, [Point(1, 0), Point(2, 0), Point(0, 1), Point(1, 1)])
+    S_1 = Piece('S1', Block.S, [Point(0, -1), Point(0, 0), Point(1, 0), Point(1, 1)])
+    I_0 = Piece('I0', Block.I, [Point(0, 0), Point(1, 0), Point(2, 0), Point(3, 0)])
+    I_1 = Piece('I1', Block.I, [Point(2, -1), Point(2, 0), Point(2, 1), Point(2, 2)])
 
     O_0.setRotations(O_0, O_0)
     J_0.setRotations(J_3, J_1)

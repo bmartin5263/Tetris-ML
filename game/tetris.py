@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from game.piece import *
 
 
@@ -11,16 +9,6 @@ class Action(Enum):
     ROTATE_CW = auto()
     ROTATE_CCW = auto()
     DROP = auto()
-
-@dataclass(frozen=True)
-class Result:
-    def __init__(self):
-        pass
-
-NO_CHANGE = Result()
-OK = Result()
-NEXT_PIECE = Result()
-GAME_OVER = Result()
 
 @dataclass(frozen=True)
 class State:
@@ -58,33 +46,10 @@ class Tetris:
         self.board: list[list[Block]] = [[Block.Empty for _ in range(self.COLS)] for _ in range(self.ROWS)]
         self.gameOver = False
         self.nextPiece: Piece = Pieces.random()
+        self.score = 0
+        self.rowsCleared = 0
+        self.combos = [0 for _ in range(4)]
         self._nextPiece()
-
-    def makeAction(self, action: Action) -> Result:
-        if self.gameOver:
-            return GAME_OVER
-        match action:
-            case Action.MOVE_LEFT:
-                print('Action: MOVE_LEFT')
-                return self._movePiece(Tetris.LEFT)
-            case Action.MOVE_RIGHT:
-                print('Action: MOVE_RIGHT')
-                return self._movePiece(Tetris.RIGHT)
-            case Action.MOVE_DOWN:
-                print('Action: MOVE_DOWN')
-                return self._movePiece(Tetris.DOWN)
-            case Action.ROTATE_CW:
-                print('Action: ROTATE_CW')
-                return self._rotatePiece(self.currentPiece.cwRotation)
-            case Action.ROTATE_CCW:
-                print('Action: ROTATE_CCW')
-                return self._rotatePiece(self.currentPiece.ccwRotation)
-            case Action.DROP:
-                print('Action: DROP')
-                return self._drop()
-            case _:
-                print('Received invalid move')
-                return NO_CHANGE
 
     def getState(self):
         return State(self.board, self.currentPiece, self.nextPiece, self.position, self.score)
@@ -139,9 +104,9 @@ class Tetris:
 
         self._placePiece(self.currentPiece, self.position)
 
-    def _movePiece(self, offset: Point) -> Result:
-        if offset.x == 0 and offset.y == 0:
-            return NO_CHANGE
+    def movePiece(self, offset: Point):
+        if (offset.x == 0 and offset.y == 0) or self.gameOver:
+            return
 
         isDown = offset.y > 0
         moved = False
@@ -154,28 +119,26 @@ class Tetris:
         self._placePiece(self.currentPiece, self.position)
 
         if isDown and not moved:
-            return self._clearRows()
-        else:
-            return OK
+            self._clearRows()
 
-    def _rotatePiece(self, rotation: Piece) -> Result:
-        if rotation is self.currentPiece:
-            return NO_CHANGE
+    def rotateClockwise(self):
+        self._rotatePiece(self.currentPiece.cwRotation)
 
-        didRotate = False
+    def rotateCounterClockwise(self):
+        self._rotatePiece(self.currentPiece.ccwRotation)
+
+    def _rotatePiece(self, rotation: Piece):
+        if rotation is self.currentPiece or self.gameOver:
+            return
 
         self._removePiece(self.currentPiece, self.position)
         if self._canPlacePieceAt(rotation, self.position):
             self.currentPiece = rotation
-            didRotate = True
         self._placePiece(self.currentPiece, self.position)
 
-        if didRotate:
-            return OK
-        else:
-            return NO_CHANGE
-
-    def _drop(self) -> Result:
+    def drop(self):
+        if self.gameOver:
+            return
         self._removePiece(self.currentPiece, self.position)
 
         destination = self.position + Tetris.DOWN
@@ -185,10 +148,9 @@ class Tetris:
 
         self._placePiece(self.currentPiece, destination)
         self.position = destination
+        self._clearRows()
 
-        return self._clearRows()
-
-    def _clearRows(self) -> Result:
+    def _clearRows(self):
         rowNumbersToCheck: set[int] = {(point + self.position).row for point in self.currentPiece.body}
         print("Row numbers to check:", sorted(rowNumbersToCheck))
 
@@ -206,8 +168,6 @@ class Tetris:
             self.combos[numberOfClearedRows - 1] += 1
 
         self._nextPiece()
-
-        return NEXT_PIECE
 
     def _clearRow(self, rowNumToClear: int):
         while rowNumToClear > 0:
